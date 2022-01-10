@@ -1,1 +1,29 @@
 // TODO
+.headerContainer {
+  max-width:700px;
+  margin: 0 auto;
+  padding: 0 2rem;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.headerContent {
+  max-width: 1120px;
+  height: 5rem;
+  margin: 1rem auto;
+  padding: 0 2rem;
+
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  img {
+    height: 23px;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+}

@@ -26,7 +26,9 @@ interface HomeProps {
 
 export default function Home() {
   return (
-    <h1>Home</h1>
+    <div className={commonStyles.container}>
+      <h1>PostsList</h1>
+    </div>
   )
 }
 
