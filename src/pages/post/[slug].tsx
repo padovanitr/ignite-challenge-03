@@ -30,7 +30,7 @@ export default function Post() {
    // TODO
    return (
      <>
-      <img className={styles.banner} src="/images/banner.png" alt="banner" />
+
      </>
    )
 }

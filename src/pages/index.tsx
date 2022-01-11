@@ -2,6 +2,8 @@ import { GetStaticProps } from 'next';
 import Link from 'next/link';
 
 import { getPrismicClient } from '../services/prismic';
+import Prismic from '@prismicio/client';
+import { RichText } from 'prismic-dom';
 
 import commonStyles from '../styles/common.module.scss';
 import styles from './home.module.scss';
@@ -25,33 +27,66 @@ interface HomeProps {
   postsPagination: PostPagination;
 }
 
-export default function Home() {
+export default function Home({ posts }) {
+  console.log('posts ns home', posts)
+
   return (
     <div className={styles.postsPreviewContainer}>
-      <Link href="/">
-        <a className={styles.postsItem}>
-          <h1 className={styles.title}>Como utilizar Hooks</h1>
-          <p className={styles.subTitle}>Pensando em sincronização em vez de ciclos de vida.</p>
-          <div className={styles.bottomInfo}>
-            <div className={styles.createdAtContainer}>
-              <img src="/images/calendar.svg" alt="calendar" />
-              <span>15 Mar 2021</span>
+
+      {posts.map(post =>(
+        <Link key={post.slug} href={`/posts/${post.slug}`}>
+          <a className={styles.postsItem}>
+            <h1 className={styles.title}>{post.title}</h1>
+            <p className={styles.subTitle}>{post.excerpt}</p>
+            <div className={styles.bottomInfo}>
+              <div className={styles.createdAtContainer}>
+                <img src="/images/calendar.svg" alt="calendar" />
+                <time>{post.updatedAt}</time>
+              </div>
+              <div className={styles.authorContainer}>
+                <img src="/images/user.svg" alt="user icon" />
+                <span>{post.author}</span>
+              </div>
             </div>
-            <div className={styles.authorContainer}>
-              <img src="/images/user.svg" alt="user icon" />
-              <span>Joseph Oliveira</span>
-            </div>
-          </div>
-        </a>
-      </Link>
+          </a>
+        </Link>
+      ))}
 
     </div>
   )
 }
 
-//export const getStaticProps = async () => {
-//  const prismic = getPrismicClient();
-  //const postsResponse = await prismic.query(TODO);
+export const getStaticProps: GetStaticProps = async () => {
+  const prismic = getPrismicClient();
 
-  // TODO
-//};
+  const postsResponse = await prismic.query([
+    Prismic.predicates.at('document.type', 'post')
+  ], {
+    fetch: ['post.title', 'post.content', 'post.author'],
+    pageSize: 100,
+  });
+
+  console.log('postsResponse', postsResponse.results)
+
+  const posts = postsResponse.results.map(post => {
+
+    return {
+      slug: post.uid,
+      title: post.data['title'],
+      author: post.data['author'],
+      excerpt: post.data.content.map(cont => {
+        return cont.body.find(content => content.type === "paragraph")?.text ?? ''
+      })[0],
+      updatedAt: new Date(post.last_publication_date).toLocaleString('pt-BR', {
+          day: '2-digit',
+          month: 'long',
+          year: 'numeric'
+      })
+    }
+  })
+
+  return {
+    props: {posts},
+    revalidate: 60 * 60 * 24, // 24 hours
+  }
+}
