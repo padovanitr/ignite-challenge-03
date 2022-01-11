@@ -1,13 +1,13 @@
 import styles from './header.module.scss';
-import common from '../../styles/common.module.scss';
 
 export function Header() {
   // TODO
   return (
-    <header className={common.container}>
+    <header className={styles.headerContainer}>
       <div className={styles.headerContent}>
         <img src="/images/logo.svg" alt="spacetraveling logo" />
-        <h1>spacetraveling.</h1>
+        <h1>spacetraveling</h1>
+        <span>.</span>
       </div>
     </header>
   )

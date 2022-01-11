@@ -2,28 +2,32 @@
 .headerContainer {
   max-width:700px;
   margin: 0 auto;
-  padding: 0 2rem;
 
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+
+  .headerContent {
+    max-width: 1120px;
+    height: 5rem;
+    margin: 1rem;
+
+    display: flex;
+    align-items: center;
+
+    img {
+      height: 23px;
+      margin-right: 0.9rem;
+    }
+
+    h1, span {
+      font-size: 1.5rem;
+    }
+
+    span {
+      color: var(--pink-10);
+      margin-left: 0.2rem;
+    }
+  }
 }
 
-.headerContent {
-  max-width: 1120px;
-  height: 5rem;
-  margin: 1rem auto;
-  padding: 0 2rem;
-
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-
-  img {
-    height: 23px;
-  }
-
-  h1 {
-    font-size: 1.5rem;
-  }
-}

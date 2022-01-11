@@ -1,1 +1,53 @@
 // TODO
+.postsPreviewContainer {
+  max-width:700px;
+  margin: 0 auto;
+
+  .postsItem {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+
+    &:not(:first-child) {
+      margin-top: 3rem;
+    }
+
+    .title {
+      font-weight: 700;
+      font-style: normal;
+      font-size: 1.75rem;
+      color: var(----gray-100);
+    }
+
+    .subTitle {
+      font-weight: 400;
+      font-style: normal;
+      font-size: 1.125rem;
+      color: var(--gray-200);
+    }
+
+    .bottomInfo {
+      display: flex;
+      gap: 1.75rem;
+      margin-top: 1rem;
+
+      img {
+        height: 20px;
+        width: 20px;
+      }
+
+      span {
+        font-weight: 400;
+        font-size: 0.85rem;
+        color: var(--gray-300);
+      }
+
+      .createdAtContainer,
+      .authorContainer {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+    }
+  }
+}
