@@ -3,7 +3,6 @@ import Link from 'next/link';
 
 import { getPrismicClient } from '../services/prismic';
 import Prismic from '@prismicio/client';
-import { RichText } from 'prismic-dom';
 
 import commonStyles from '../styles/common.module.scss';
 import styles from './home.module.scss';
@@ -28,13 +27,12 @@ interface HomeProps {
 }
 
 export default function Home({ posts }) {
-  console.log('posts ns home', posts)
 
   return (
     <div className={styles.postsPreviewContainer}>
 
       {posts.map(post =>(
-        <Link key={post.slug} href={`/posts/${post.slug}`}>
+        <Link key={post.slug} href={`/post/${post.slug}`}>
           <a className={styles.postsItem}>
             <h1 className={styles.title}>{post.title}</h1>
             <p className={styles.subTitle}>{post.excerpt}</p>
@@ -65,8 +63,6 @@ export const getStaticProps: GetStaticProps = async () => {
     fetch: ['post.title', 'post.content', 'post.author'],
     pageSize: 100,
   });
-
-  console.log('postsResponse', postsResponse.results)
 
   const posts = postsResponse.results.map(post => {
 
