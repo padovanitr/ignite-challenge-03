@@ -65,7 +65,7 @@ export default function Home({
   }, [postsPagination.results, postsPagination.next_page]);
 
   return (
-    <div className={styles.postsPreviewContainer}>
+    <div className={commonStyles.contentContainer}>
 
       {posts.map(post =>(
         <Link key={post.slug} href={`/post/${post.slug}`}>
