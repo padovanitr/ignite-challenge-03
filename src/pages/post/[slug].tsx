@@ -1,6 +1,7 @@
+import { useRouter } from 'next/router';
 import { GetStaticPaths, GetStaticProps } from 'next';
 
-import { FiCalendar, FiUser } from 'react-icons/fi';
+import { FiCalendar, FiUser, FiClock } from 'react-icons/fi';
 import { getPrismicClient } from '../../services/prismic';
 import { RichText } from 'prismic-dom';
 import * as prismicH from '@prismicio/helpers';
@@ -30,12 +31,17 @@ interface Post {
 
 interface PostProps {
   post: Post;
+  readingTime: number;
 }
 
-export default function Post({ post }: PostProps) {
-    console.log('post', post)
+export default function Post({ post, readingTime }: PostProps) {
+    const router = useRouter();
 
-   return (
+    if (router.isFallback) {
+      return <div>Carregando...</div>
+    }
+
+    return (
      <>
       <Head>
         <title>{post.data.title} | Space Traveling</title>
@@ -54,12 +60,23 @@ export default function Post({ post }: PostProps) {
           <div className={styles.postInfo}>
             <span>
               <FiCalendar size={20} color="#BBBBBB" />
-              {post.last_publication_date}
+              {format(
+                parseISO(post.last_publication_date),
+                "dd LLL yyyy",
+                {
+                  locale: ptBR,
+                }
+              )}
             </span>
 
             <span>
               <FiUser size={20} color="#BBBBBB" />
               {post.data.author}
+            </span>
+
+            <span>
+              <FiClock size={20} color="#BBBBBB" />
+              {readingTime} min
             </span>
           </div>
 
@@ -96,15 +113,9 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 
   const response = await prismic.getByUID('post', String(slug), {});
 
-  console.log('content', prismicH.asText(response.data['content']))
-
   const post = {
     uid: response.uid,
-    last_publication_date: new Date(response.last_publication_date).toLocaleString('pt-BR', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric'
-    }),
+    last_publication_date: response.last_publication_date,
     data: {
       title: response.data.title,
       subtitle: response.data.subtitle,
@@ -114,9 +125,24 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     },
   }
 
+  const amountBody = prismicH.asText(
+    post.data.content.reduce((acc, data) => [...acc, ...data.body], [])
+  ).split(' ').length;
+
+  const amountHeading = post.data.content.reduce((acc, data) => {
+    if (data.heading) {
+      return [...acc, data.heading.split(' ')]
+    }
+
+    return [...acc]
+  },[]).length;
+
+  const readingTime = Math.ceil((amountBody + amountHeading) / 200)
+
   return {
     props: {
-      post
+      post,
+      readingTime
     }
   }
 };

@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { getPrismicClient } from '../services/prismic';
 import Prismic from '@prismicio/client';
 import { FiCalendar, FiUser } from 'react-icons/fi';
+import { format, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 import commonStyles from '../styles/common.module.scss';
 import styles from './home.module.scss';
@@ -11,7 +13,7 @@ import { useEffect, useState } from 'react';
 
 interface Post {
   slug?: string;
-  first_publication_date: string | null;
+  last_publication_date: string | null;
   data: {
     title: string;
     subtitle: string;
@@ -28,9 +30,7 @@ interface HomeProps {
   postsPagination: PostPagination;
 }
 
-export default function Home({
-  postsPagination
-}: HomeProps) {
+export default function Home({ postsPagination }: HomeProps) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [nextPage, setNextPage] = useState('');
 
@@ -41,11 +41,7 @@ export default function Home({
         const formattedData = data.results.map(post => {
           return {
             uid: post.uid,
-            first_publication_date: new Date(post.first_publication_date).toLocaleString('pt-BR', {
-              day: '2-digit',
-              month: 'long',
-              year: 'numeric'
-            }),
+            first_publication_date: post.first_publication_date,
             data: {
               title: post.data.title,
               subtitle: post.data.subtitle,
@@ -75,7 +71,13 @@ export default function Home({
             <div className={styles.bottomInfo}>
               <div className={styles.createdAtContainer}>
                 <FiCalendar size={20} color="#BBBBBB" />
-                <time>{post.first_publication_date}</time>
+                <time>{format(
+                  parseISO(post.last_publication_date),
+                  "dd LLL yyyy",
+                  {
+                    locale: ptBR,
+                  }
+                )}</time>
               </div>
               <div className={styles.authorContainer}>
                 <FiUser size={20} color="#BBBBBB" />
@@ -113,11 +115,7 @@ export const getStaticProps: GetStaticProps = async () => {
 
     return {
       slug: post.uid,
-      first_publication_date: new Date(post.last_publication_date).toLocaleString('pt-BR', {
-          day: '2-digit',
-          month: 'long',
-          year: 'numeric'
-      }),
+      last_publication_date: post.last_publication_date,
       data: {
         title: post.data['title'],
         author: post.data['author'],
