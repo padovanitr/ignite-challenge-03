@@ -1,19 +1,22 @@
 import { GetStaticProps } from 'next';
 import Link from 'next/link';
 
+
 import { getPrismicClient } from '../services/prismic';
 import Prismic from '@prismicio/client';
-import { FiCalendar, FiUser } from 'react-icons/fi';
+import { FiCalendar, FiUser, FiClock } from 'react-icons/fi';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import * as prismicH from '@prismicio/helpers';
 
 import commonStyles from '../styles/common.module.scss';
 import styles from './home.module.scss';
 import { useEffect, useState } from 'react';
 
 interface Post {
-  slug?: string;
-  last_publication_date: string | null;
+  uid?: string;
+  first_publication_date: string | null;
+  readingTime: number;
   data: {
     title: string;
     subtitle: string;
@@ -34,16 +37,16 @@ export default function Home({ postsPagination }: HomeProps) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [nextPage, setNextPage] = useState('');
 
-  console.log('posts', posts)
-
   function handlePagination(): void {
+    if (!nextPage) return
+
     fetch(nextPage)
       .then(res => res.json())
       .then(data => {
         const formattedData = data.results.map(post => {
           return {
             uid: post.uid,
-            last_publication_date: post.last_publication_date,
+            first_publication_date: post.first_publication_date,
             data: {
               title: post.data.title,
               subtitle: post.data.subtitle,
@@ -65,8 +68,8 @@ export default function Home({ postsPagination }: HomeProps) {
   return (
     <div className={commonStyles.contentContainer}>
 
-      {posts.map(post =>(
-        <Link key={post.slug} href={`/post/${post.slug}`}>
+      {posts && posts.map(post => (
+        <Link key={post.uid} href={`/post/${post.uid}`}>
           <a className={styles.postsItem}>
             <h1 className={styles.title}>{post.data.title}</h1>
             <p className={styles.subTitle}>{post.data.subtitle}</p>
@@ -74,30 +77,36 @@ export default function Home({ postsPagination }: HomeProps) {
               <div className={styles.createdAtContainer}>
                 <FiCalendar size={20} color="#BBBBBB" />
                 <time>{format(
-                  parseISO(post.last_publication_date),
+                  new Date(post.first_publication_date),
                   "dd LLL yyyy",
                   {
                     locale: ptBR,
                   }
                 )}</time>
+
               </div>
               <div className={styles.authorContainer}>
                 <FiUser size={20} color="#BBBBBB" />
                 <span>{post.data.author}</span>
               </div>
+
+              <span className={styles.readingTime}>
+                <FiClock size={20} color="#BBBBBB" />
+                {post.readingTime} min
+              </span>
             </div>
           </a>
         </Link>
       ))}
 
-      {nextPage &&
+      {nextPage && (
         <button
           onClick={handlePagination}
           className={styles.loadMore}
         >
           Carregar mais posts
         </button>
-      }
+      )}
 
     </div>
   )
@@ -109,21 +118,19 @@ export const getStaticProps: GetStaticProps = async () => {
   const postsResponse = await prismic.query([
     Prismic.predicates.at('document.type', 'post')
   ], {
-    fetch: ['post.title', 'post.content', 'post.author'],
     pageSize: 2,
+    orderings: '[document.first_publication_date desc]',
   });
 
   const posts = postsResponse.results.map(post => {
 
     return {
-      slug: post.uid,
-      last_publication_date: post.last_publication_date,
+      uid: post.uid,
+      first_publication_date: post.first_publication_date,
       data: {
         title: post.data['title'],
         author: post.data['author'],
-        subtitle: post.data.content.map(cont => {
-          return cont.body.find(content => content.type === "paragraph")?.text ?? ''
-        })[0].slice(0, 100) + "...",
+        subtitle: post.data.subtitle
       },
     }
   })
@@ -135,5 +142,6 @@ export const getStaticProps: GetStaticProps = async () => {
         results: posts,
       }
     },
+    revalidate: 60 * 30,
   }
 }

@@ -7,13 +7,14 @@ import { RichText } from 'prismic-dom';
 import * as prismicH from '@prismicio/helpers';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import Prismic from '@prismicio/client';
 
 import commonStyles from '../../styles/common.module.scss';
 import styles from './post.module.scss';
 import Head from 'next/head';
 
 interface Post {
-  last_publication_date: string | null;
+  first_publication_date: string | null;
   data: {
     title: string;
     banner: {
@@ -23,6 +24,7 @@ interface Post {
     content: {
       heading: string;
       body: {
+        heading: string,
         text: string;
       }[];
     }[];
@@ -31,15 +33,30 @@ interface Post {
 
 interface PostProps {
   post: Post;
-  readingTime: number;
+  readingTime: number | null;
 }
 
-export default function Post({ post, readingTime }: PostProps) {
+export default function Post({ post }: PostProps) {
     const router = useRouter();
 
     if (router.isFallback) {
       return <div>Carregando...</div>
     }
+    const totalWords = post.data.content.reduce((total, contentItem) => {
+      let count = 0;
+      count += contentItem.heading.split(' ').length;
+
+      const wordsCounter = contentItem.body.map(
+        item => item.text.split(' ').length
+      );
+      wordsCounter.map(words => (count += words));
+
+      total += count;
+
+      return total;
+    }, 0);
+
+    const readingTime = Math.ceil(totalWords / 200);
 
     return (
      <>
@@ -61,7 +78,7 @@ export default function Post({ post, readingTime }: PostProps) {
             <span>
               <FiCalendar size={20} color="#BBBBBB" />
               {format(
-                parseISO(post.last_publication_date),
+                parseISO(post.first_publication_date),
                 "dd LLL yyyy",
                 {
                   locale: ptBR,
@@ -74,7 +91,7 @@ export default function Post({ post, readingTime }: PostProps) {
               {post.data.author}
             </span>
 
-            <span>
+            <span className={styles.readingTime}>
               <FiClock size={20} color="#BBBBBB" />
               {readingTime} min
             </span>
@@ -100,10 +117,25 @@ export default function Post({ post, readingTime }: PostProps) {
 }
 
 export const getStaticPaths: GetStaticPaths = async () => {
+  const prismic = getPrismicClient();
+
+  const posts = await prismic.query(
+    [Prismic.predicates.at('document.type', 'post')],
+    { pageSize: 3 }
+  );
+
+  const paths = posts.results.map(result => {
+    return {
+      params: {
+        slug: result.uid,
+      },
+    };
+  });
+
   return {
-    paths: [],
-    fallback: 'blocking'
-  }
+    paths,
+    fallback: true,
+  };
 };
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
@@ -113,36 +145,28 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 
   const response = await prismic.getByUID('post', String(slug), {});
 
+  const content = response.data.content.map(contentData => {
+    return {
+      heading: contentData.heading,
+      body: [...contentData.body],
+    };
+  });
+
   const post = {
     uid: response.uid,
-    last_publication_date: response.last_publication_date,
+    first_publication_date: response.first_publication_date,
     data: {
       title: response.data.title,
       subtitle: response.data.subtitle,
       banner: response.data.banner,
       author: response.data.author,
-      content: response.data.content,
+      content: content
     },
   }
-
-  const amountBody = prismicH.asText(
-    post.data.content.reduce((acc, data) => [...acc, ...data.body], [])
-  ).split(' ').length;
-
-  const amountHeading = post.data.content.reduce((acc, data) => {
-    if (data.heading) {
-      return [...acc, data.heading.split(' ')]
-    }
-
-    return [...acc]
-  },[]).length;
-
-  const readingTime = Math.ceil((amountBody + amountHeading) / 200)
 
   return {
     props: {
       post,
-      readingTime
     }
   }
 };
