@@ -34,6 +34,8 @@ export default function Home({ postsPagination }: HomeProps) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [nextPage, setNextPage] = useState('');
 
+  console.log('posts', posts)
+
   function handlePagination(): void {
     fetch(nextPage)
       .then(res => res.json())
@@ -41,7 +43,7 @@ export default function Home({ postsPagination }: HomeProps) {
         const formattedData = data.results.map(post => {
           return {
             uid: post.uid,
-            first_publication_date: post.first_publication_date,
+            last_publication_date: post.last_publication_date,
             data: {
               title: post.data.title,
               subtitle: post.data.subtitle,
@@ -129,8 +131,8 @@ export const getStaticProps: GetStaticProps = async () => {
   return {
     props: {
       postsPagination: {
-      next_page: postsResponse.next_page,
-      results: posts,
+        next_page: postsResponse.next_page,
+        results: posts,
       }
     },
   }
