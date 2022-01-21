@@ -1,17 +1,15 @@
+import { useEffect, useState } from 'react';
 import { GetStaticProps } from 'next';
 import Link from 'next/link';
-
 
 import { getPrismicClient } from '../services/prismic';
 import Prismic from '@prismicio/client';
 import { FiCalendar, FiUser, FiClock } from 'react-icons/fi';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import * as prismicH from '@prismicio/helpers';
 
 import commonStyles from '../styles/common.module.scss';
 import styles from './home.module.scss';
-import { useEffect, useState } from 'react';
 
 interface Post {
   uid?: string;
@@ -36,13 +34,17 @@ interface HomeProps {
 export default function Home({ postsPagination }: HomeProps) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [nextPage, setNextPage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(false);
 
   function handlePagination(): void {
+    setIsLoading(true)
     if (!nextPage) return
 
     fetch(nextPage)
       .then(res => res.json())
       .then(data => {
+        setIsLoading(false)
         const formattedData = data.results.map(post => {
           return {
             uid: post.uid,
@@ -70,7 +72,7 @@ export default function Home({ postsPagination }: HomeProps) {
 
       {posts && posts.map(post => (
         <Link key={post.uid} href={`/post/${post.uid}`}>
-          <a className={styles.postsItem}>
+          <a onClick={(e) => setPageLoading(true)} className={styles.postsItem}>
             <h1 className={styles.title}>{post.data.title}</h1>
             <p className={styles.subTitle}>{post.data.subtitle}</p>
             <div className={styles.bottomInfo}>
@@ -104,10 +106,18 @@ export default function Home({ postsPagination }: HomeProps) {
           onClick={handlePagination}
           className={styles.loadMore}
         >
-          Carregar mais posts
+          {isLoading
+          ? <img className={styles.loadingGif} src="/images/loading.gif" alt="carregando..." />
+          : "Carregar mais posts"
+          }
         </button>
       )}
 
+      {pageLoading &&
+        <div className={styles.overlayLoadingGif}>
+          <img src="/images/loading.gif" alt="Página carregando..." />
+        </div>
+      }
     </div>
   )
 }

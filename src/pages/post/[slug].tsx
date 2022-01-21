@@ -4,12 +4,10 @@ import { GetStaticPaths, GetStaticProps } from 'next';
 import { FiCalendar, FiUser, FiClock } from 'react-icons/fi';
 import { getPrismicClient } from '../../services/prismic';
 import { RichText } from 'prismic-dom';
-import * as prismicH from '@prismicio/helpers';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Prismic from '@prismicio/client';
 
-import commonStyles from '../../styles/common.module.scss';
 import styles from './post.module.scss';
 import Head from 'next/head';
 

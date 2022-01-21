@@ -53,3 +53,27 @@
   background: transparent;
   border: none;
 }
+
+.loadingGif {
+  height: 30px;
+  width: 30px;
+}
+
+.overlayLoadingGif {
+  height: 100%;
+  width: 100%;
+  background: rgb(0, 0, 0, .5);
+  opacity: .7;
+  z-index: 100000;
+  top: 0;
+  right: 0;
+  position: fixed;
+  align-items: center;
+  justify-content: center;
+  display: flex;
+  transition: .2s;
+
+  img {
+      height: 50px;
+  }
+}
