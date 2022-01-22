@@ -1,4 +1,5 @@
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 import { GetStaticPaths, GetStaticProps } from 'next';
 
 import { FiCalendar, FiUser, FiClock } from 'react-icons/fi';
@@ -7,6 +8,7 @@ import { RichText } from 'prismic-dom';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Prismic from '@prismicio/client';
+import Comments from '../../components/Comments';
 
 import styles from './post.module.scss';
 import Head from 'next/head';
@@ -29,12 +31,19 @@ interface Post {
   };
 }
 
+interface NeighborhoodPost {
+  title: string;
+  uid: string;
+}
+
 interface PostProps {
   post: Post;
   readingTime: number | null;
+  nextPost: NeighborhoodPost;
+  previousPost: NeighborhoodPost;
 }
 
-export default function Post({ post }: PostProps) {
+export default function Post({ post, previousPost, nextPost }: PostProps) {
     const router = useRouter();
 
     if (router.isFallback) {
@@ -109,6 +118,32 @@ export default function Post({ post }: PostProps) {
             ))}
           </div>
         </article>
+
+        <footer className={styles.footer}>
+        <div>
+            {previousPost && (
+              <>
+                <p>{previousPost.title}</p>
+                <Link href={`/post/${previousPost.uid}`}>
+                  <a>Post anterior</a>
+                </Link>
+              </>
+            )}
+          </div>
+
+          <div>
+            {nextPost && (
+              <>
+                <p>{nextPost.title}</p>
+                <Link href={`/post/${nextPost.uid}`}>
+                  <a>Próximo post</a>
+                </Link>
+              </>
+            )}
+          </div>
+        </footer>
+
+        <Comments />
       </main>
      </>
    )
@@ -136,12 +171,39 @@ export const getStaticPaths: GetStaticPaths = async () => {
   };
 };
 
+function verifyNeighborhoodPost(post, slug): NeighborhoodPost | null {
+  return slug === post.results[0].uid
+    ? null
+    : {
+      title: post.results[0]?.data?.title,
+      uid: post.results[0]?.uid,
+    };
+}
+
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const { slug } = params;
 
   const prismic = getPrismicClient();
 
   const response = await prismic.getByUID('post', String(slug), {});
+
+  const responsePreviousPost = await prismic.query(
+    Prismic.Predicates.at('document.type', 'post'),
+    {
+      pageSize: 1,
+      after: slug,
+      orderings: '[document.first_publication_date desc]',
+    }
+  );
+
+  const responseNextPost = await prismic.query(
+    Prismic.Predicates.at('document.type', 'post'),
+    { pageSize: 1, after: slug, orderings: '[document.first_publication_date]' }
+  );
+
+  const nextPost = verifyNeighborhoodPost(responseNextPost, slug);
+
+  const previousPost = verifyNeighborhoodPost(responsePreviousPost, slug);
 
   const content = response.data.content.map(contentData => {
     return {
@@ -165,6 +227,8 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   return {
     props: {
       post,
+      nextPost,
+      previousPost
     }
   }
 };

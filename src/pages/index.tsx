@@ -7,6 +7,7 @@ import Prismic from '@prismicio/client';
 import { FiCalendar, FiUser, FiClock } from 'react-icons/fi';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import PreviewButton from '../components/PreviewButton';
 
 import commonStyles from '../styles/common.module.scss';
 import styles from './home.module.scss';
@@ -29,9 +30,10 @@ interface PostPagination {
 
 interface HomeProps {
   postsPagination: PostPagination;
+  preview: boolean;
 }
 
-export default function Home({ postsPagination }: HomeProps) {
+export default function Home({ postsPagination, preview }: HomeProps) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [nextPage, setNextPage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -118,11 +120,16 @@ export default function Home({ postsPagination }: HomeProps) {
           <img src="/images/loading.gif" alt="Página carregando..." />
         </div>
       }
+
+      {preview && <PreviewButton />}
     </div>
   )
 }
 
-export const getStaticProps: GetStaticProps = async () => {
+export const getStaticProps: GetStaticProps = async ({
+  preview = false,
+  previewData
+}) => {
   const prismic = getPrismicClient();
 
   const postsResponse = await prismic.query([
@@ -130,13 +137,31 @@ export const getStaticProps: GetStaticProps = async () => {
   ], {
     pageSize: 2,
     orderings: '[document.first_publication_date desc]',
+    ref: previewData?.ref ?? null,
   });
 
   const posts = postsResponse.results.map(post => {
 
+    const totalWords = post.data.content.reduce((total, contentItem) => {
+      let count = 0;
+      count += contentItem.heading.split(' ').length;
+
+      const wordsCounter = contentItem.body.map(
+        item => item.text.split(' ').length
+      );
+      wordsCounter.map(words => (count += words));
+
+      total += count;
+
+      return total;
+    }, 0);
+
+    const readingTime = Math.ceil(totalWords / 200);
+
     return {
       uid: post.uid,
       first_publication_date: post.first_publication_date,
+      readingTime,
       data: {
         title: post.data['title'],
         author: post.data['author'],
@@ -150,7 +175,8 @@ export const getStaticProps: GetStaticProps = async () => {
       postsPagination: {
         next_page: postsResponse.next_page,
         results: posts,
-      }
+      },
+      preview
     },
     revalidate: 60 * 30,
   }
